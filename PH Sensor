@@ -1,0 +1,36 @@
+#define PH_PIN 4  // Define the pin where the pH sensor is connected
+float voltage, pHValue, temperature = 25.0;   // Initialize voltage, pH value, and temperature
+
+// Calibration values for the pH sensor (adjust these as per your calibration)
+float acidVoltage = 760;  // Voltage value for pH 4.0 buffer solution at 25°C
+float neutralVoltage = 890; // Voltage value for pH 7.0 buffer solution at 25°C
+
+void setup() {
+  Serial.begin(115200);  // Initialize serial communication at 115200 baud rate
+}
+
+void loop() {
+  static unsigned long timepoint = millis(); // Capture the time for a 1-second interval
+  if (millis() - timepoint > 1000) {  // Check if 1 second has passed
+    timepoint = millis();  // Update the timepoint for the next cycle
+
+    // temperature = readTemperature(); // Optionally read the temperature sensor for compensation (if available)
+
+    // Read the voltage from the pH sensor, scaling it according to the 12-bit ADC resolution
+    voltage = analogRead(PH_PIN) / 4095.0 * 3300; 
+
+    // Calculate the slope for the pH calculation using two-point calibration
+    float slope = (7.0 - 4.0) / ((neutralVoltage - 1500) / 3.0 - (acidVoltage - 1500) / 3.0); 
+    // Calculate the intercept for the pH equation
+    float intercept = 7.0 - slope * (neutralVoltage - 1500) / 3.0;
+    
+    // Calculate the pH value using the measured voltage
+    pHValue = slope * (voltage - 1500) / 3.0 + intercept;
+
+    // Output the voltage and pH value to the serial monitor
+    Serial.print("Voltage: ");
+    Serial.print(voltage, 1);  // Print the voltage with 1 decimal place
+    Serial.print(" mV, pH: ");
+    Serial.println(pHValue, 2);  // Print the pH value with 2 decimal places
+  }
+}
